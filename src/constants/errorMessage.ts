@@ -1,0 +1,1 @@
+export const REQUIRED_PROPERTY = "Property is required"

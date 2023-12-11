@@ -1,0 +1,1 @@
+export const OPK_COUNTER = 'opk-counter'
