@@ -1,0 +1,1 @@
+export const SURVEY_JOURNAL = 'survey-journal'

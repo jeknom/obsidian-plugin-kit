@@ -1,10 +1,9 @@
-import { Notice, Plugin } from 'obsidian';
-import { OPK_COUNTER } from 'src/constants/codeBlockLang';
-import { CounterSchema } from 'src/types';
-import { parse, stringify } from 'yaml'
-import Counter from './src/components/Counter.svelte'
+import { Plugin } from 'obsidian';
+import { JSON_LANG, OPK_COUNTER } from 'src/constants/codeBlockLang';
 import * as commands from './src/commands'
-import fs from 'fs/promises'
+import { counterBlock, surveyJournalBlock } from 'src/mdCodeBlockProcessors';
+import { YamlTypeSchema } from 'src/types';
+import { SURVEY_JOURNAL } from 'src/constants/dataType';
 
 // Remove once settings are implemented
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -17,13 +16,6 @@ const DEFAULT_SETTINGS: OPKSettings = {
 export default class MyPlugin extends Plugin {
 	settings: OPKSettings = DEFAULT_SETTINGS;
 
-	async updateCounterBlock(path: string) {
-		const file = await fs.readFile(path)
-		console.log({ path, file })
-		
-	}
-
-
 	async onload() {
 		await this.loadSettings();
 
@@ -31,38 +23,26 @@ export default class MyPlugin extends Plugin {
 			this.addCommand(command)
 		}
 
-		this.registerMarkdownCodeBlockProcessor(OPK_COUNTER, async (source, el, { sourcePath }) => {
-			try {
-				const obj = parse(source)
-				const counter = CounterSchema.parse(obj)
-				
-				const onUpdateCount = async (newCount: number) => {
-					const content = await this.app.vault.adapter.read(sourcePath)
-					const counterCopy = structuredClone(counter)
-					counterCopy.value = newCount
-					const counterYaml = stringify(counterCopy)
-					const newContent = content.replace(source, counterYaml)
-
-					await this.app.vault.adapter.write(sourcePath, newContent)
-				}
-
-				new Counter({
-					target: el,
-					props: {
-						title: counter.title,
-						value: counter.value,
-						onChange: async (e: number) => onUpdateCount(e)
+		this.registerMarkdownCodeBlockProcessor(
+			OPK_COUNTER,
+			async (source, el, { sourcePath }) => await counterBlock(source, sourcePath, this.app, el))
+		
+		this.registerMarkdownCodeBlockProcessor(
+			JSON_LANG,
+			async (source, el, { sourcePath }) => {
+				const validation = YamlTypeSchema.safeParse(JSON.parse(source))
+				if (validation.success) {
+					switch (validation.data.type) {
+						case SURVEY_JOURNAL:
+							await surveyJournalBlock(source, sourcePath, this.app, el)
+							break
 					}
-				})
-
-			} catch (error) {
-				new Notice('Failed to parse counter')
-			}
-		})
+				}
+			})
 	}
 
 	onunload() {
-
+		// Obsidian unload method
 	}
 
 	async loadSettings() {
