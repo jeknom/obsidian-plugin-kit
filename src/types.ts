@@ -44,6 +44,7 @@ export const SurveyJournalDays = z.object({
 })
 
 export const SurveyJournalSchema = z.object({
+  version: z.number().min(1, { message: REQUIRED_PROPERTY }),
   type: z.literal(SURVEY_JOURNAL),
   id: z.string().min(1, { message: REQUIRED_PROPERTY }),
   name: z.string().min(1, { message: REQUIRED_PROPERTY }),

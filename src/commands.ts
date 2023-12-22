@@ -24,6 +24,7 @@ export const addSurveyJournal: Command = {
     name: 'Insert Survey Journal',
     editorCallback: (editor: Editor) => {
         editor.replaceRange(createJsonCodeBlock(JSON_LANG, {
+            version: 1,
             type: SURVEY_JOURNAL,
             id: v4(),
             name: 'Your title',
